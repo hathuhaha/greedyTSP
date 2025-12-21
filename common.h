@@ -6,6 +6,7 @@
 #include <iostream>
 #include <vector> 
 #include <algorithm>
+#include <cmath>
 
 #define f first
 #define s second

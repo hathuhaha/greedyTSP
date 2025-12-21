@@ -2,38 +2,25 @@
 #define VARIABLES_H
 
 #include "common.h" 
-
-template<typename T> 
-class Customer {
-public: 
-    std::pair<T, T> position;
-
-    Customer() {
-        position = {T(), T()};
-    }
-
-    Customer(T x, T y) {
-        position = {x, y};
-    }
-};
+#include "parameters.h"
 
 class Solution {
 public: 
-    int tourSize, fillPtr;
+    int vSize, fillPtr;
     std::vector<int> tour;
     double totalLength;
     std::vector<bool> visited;
 
     Solution() {
 
-        fillPtr = totalLength = tourSize = 0;
+        fillPtr = totalLength = vSize = 0;
     }
 
     Solution(int _tourSize) {
 
-        tourSize = _tourSize;
-        tour.resize(tourSize);
-        visited.resize(tourSize);
+        vSize = _tourSize;
+        tour.resize(vSize);
+        visited.resize(vSize);
 
         std::fill(tour.begin(), tour.end(), -1);
         std::fill(visited.begin(), visited.end(), 0);
