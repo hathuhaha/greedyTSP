@@ -9,22 +9,24 @@ public:
     class Vertex {
     public:
         std::pair<double, double> position;
-
+        int id;
         Vertex() {
+            id = -1;
             position = {0.0, 0.0};
         }
 
-        Vertex(double x, double y) {
+        Vertex(double x, double y, int _id) {
             position = {x, y};
+            id = _id;
         }
 
         double getEuclideDistance(const Vertex& other);
-        
+        double getManhattanDistance(const Vertex& other);
     };
 
     int vSize;
     std::vector<Vertex> vertices;
-    std::vector<std::vector<double>> dist;
+    std::vector<std::vector<double>> tdist, ddist;
     
     Graph() {
         vSize = 0;
@@ -33,13 +35,24 @@ public:
     Graph(int _vSize) {
         vSize = _vSize;
         vertices.resize(vSize);
-        dist.resize(vSize);
+        tdist.resize(vSize);
+        ddist.resize(vSize);
 
         std::vector<double> sample(vSize, 0.0);
-        std::fill(dist.begin(), dist.end(), sample);
+        std::fill(tdist.begin(), tdist.end(), sample);
+        std::fill(ddist.begin(), ddist.end(), sample);
+
+    }
+    
+    Graph(const Graph& other) {
+        vSize = other.vSize;
+        vertices = other.vertices;
+        tdist = other.tdist;
+        ddist = other.ddist;
     }
 
-    void calculateDistance();
+    void calculateTDistance();
+    void calculateDDistance();
 };
 
 

@@ -7,7 +7,7 @@
 class Solution {
 public: 
     int vSize, fillPtr;
-    std::vector<int> tour;
+    std::vector<Graph::Vertex> tour;
     double totalLength;
     std::vector<bool> visited;
 
@@ -19,13 +19,16 @@ public:
     Solution(int _tourSize) {
 
         vSize = _tourSize;
+        fillPtr = totalLength = 0;
+        
         tour.resize(vSize);
         visited.resize(vSize);
 
         std::fill(tour.begin(), tour.end(), -1);
         std::fill(visited.begin(), visited.end(), 0);
     }
-    void addVertex(int vertex);
+    void addVertex(Graph::Vertex vertex, int position);
+    void printTour();
 };
 
 #endif

@@ -7,6 +7,9 @@
 #include <vector> 
 #include <algorithm>
 #include <cmath>
+#include <string>
+#include <fstream>
+
 
 #define f first
 #define s second
