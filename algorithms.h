@@ -5,6 +5,6 @@
 #include "parameters.h"
 #include "variables.h"
 
-
-void nearest_insertion_greedy_TSP(Graph& graph, Solution& solution, const int startVertex);
+void nearest_insertion_greedy_TSP(Graph &graph, Solution &solution, const int startVertex);
+void check_all_permutations_TSP(Graph &graph, Solution &solution);
 #endif

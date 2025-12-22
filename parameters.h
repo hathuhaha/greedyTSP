@@ -19,6 +19,17 @@ public:
             position = {x, y};
             id = _id;
         }
+        Vertex(const Vertex& other) {
+            position = other.position;
+            id = other.id;
+        }
+        bool operator < (const Vertex& other) const {
+            return id < other.id;
+        }
+        void operator = (const Vertex& other) {
+            position = other.position;
+            id = other.id;
+        }
 
         double getEuclideDistance(const Vertex& other);
         double getManhattanDistance(const Vertex& other);

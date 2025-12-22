@@ -5,6 +5,6 @@
 #include "parameters.h"
 #include "variables.h"
 
-void inputGraph(Graph& graph, const std::string& filename);
+void inputGraph(Graph &graph, const std::string &filename);
 
 #endif
