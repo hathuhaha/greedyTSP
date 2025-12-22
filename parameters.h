@@ -24,7 +24,7 @@ public:
             id = other.id;
         }
         bool operator < (const Vertex& other) const {
-            return id < other.id;
+            return id > other.id;
         }
         void operator = (const Vertex& other) {
             position = other.position;

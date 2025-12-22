@@ -13,7 +13,7 @@ int main() {
         inputGraph(graph, file);
 
         Solution solution(graph.vSize);
-        nearest_insertion_greedy_TSP(graph, solution, 0);
+        nearest_insertion_greedy_TSP(graph, solution, graph.vSize - 1);
         solution.printTourInFile("results/output_" + file);
     }
     return 0;
