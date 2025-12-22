@@ -30,7 +30,7 @@ void nearest_insertion_greedy_TSP(Graph &graph, Solution &solution, const int st
                 Graph::Vertex v2 = solution.tour[(pos + 1) % solution.fillPtr];
 
                 double increase = v1.getEuclideDistance(vertex) + vertex.getEuclideDistance(v2) - v1.getEuclideDistance(v2);
-                if (increase < minIncrease) {
+                if (increase <= minIncrease) {
                     minIncrease = increase;
                     bestPosition = (pos + 1) % solution.fillPtr;
                 }

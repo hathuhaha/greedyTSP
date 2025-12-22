@@ -30,7 +30,7 @@ void Solution::addVertex(Graph::Vertex vertex, int position) {
 }
 
 void Solution::printTour() {
-    std::cout << "Optimal Solution: " << totalLength << '\n';
+    std::cout << "Solution: " << totalLength << '\n';
     std::cout << "Tour: ";
     for (int i = 0; i < vSize; i++) {
         std::cout << tour[i].id << ' ';
@@ -46,7 +46,7 @@ void Solution::printTourInFile(const std::string &filename) {
         return;
     }
 
-    outfile << "Optimal Solution: " << totalLength << '\n';
+    outfile << "Solution: " << totalLength << '\n';
     outfile << "Tour: ";
     for (int i = 0; i < vSize; i++) {
         outfile << tour[i].id << ' ';
