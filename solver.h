@@ -21,13 +21,13 @@ public:
     
 };
 
-class solver {
+class Solver {
     class Config {
     public:
         long long timeLimitInSeconds;
         std::string algorithmName;
         Config() {
-            timeLimitInSeconds = 3600;
+            timeLimitInSeconds = 100000;
             algorithmName = "ILS";
         }
         Config(long long _timeLimitInSeconds, std::string _algorithmName) {
@@ -37,13 +37,27 @@ class solver {
     };
 public: 
     Instance instance;
-    Solution initialSolution();
     Config config;
 
+    //Constructors
     solver();
     solver(const Instance &_instance);
-    void setConfig(long long _timeLimitInSeconds, std::string _algorithmName);
+
+    //Set configuration parameters
+    void setAllConfig(long long _timeLimitInSeconds, std::string _algorithmName);
+    void setConfig_timeLimitInSeconds(long long _timeLimitInSeconds);
+    void setConfig_algorithm(std::string _algorithmName);
+
+    //Main solving functions
     Solution solve();
+    
+    Solution generateInitialSolution();
+    Solution localSearch_hillClimbing(const Solution &initialSolution);
+    Solution perturbation(const Solution &currentSolution);
+    Solution acceptanceCriterion(const Solution &currentSolution, const Solution &newSolution);
+
+    
+
 };
 
 #endif
