@@ -16,17 +16,15 @@ Instance::Instance(const int &_cntVertices, const std::vector<Vertex> &_vertices
 }
 
 //Function to get distance between two vertices
-double Instance::getDistance(const int &from, const int &to) const {
-    if(from == to)
-        return 0.0;
-    return getEuclideDistance(vertices[from], vertices[to]);
+double Instance::getDistance(int from, int to) const {
+    return distance[from][to];
 }
 
 //Function to prepare the distance matrix for all vertex pairs
 void Instance::prepareDistanceMatrix() {
     for (int i = 0; i < cntVertices; ++i) {
         for (int j = i; j < cntVertices; ++j) {
-            distance[j][i] = distance[i][j] = getDistance(i, j);
+            distance[j][i] = distance[i][j] = getEuclideDistance(vertices[i], vertices[j]);
         }
     }
 }
@@ -41,6 +39,7 @@ void Instance::readFromFile(const std::string &fileName) {
 
     inputFile >> cntVertices;
     vertices.resize(cntVertices);
+    distance.resize(cntVertices, std::vector<double>(cntVertices, 0.0));
 
     for (int i = 0; i < cntVertices; ++i) {
         int id;
@@ -48,8 +47,8 @@ void Instance::readFromFile(const std::string &fileName) {
         inputFile >> id >> x >> y;
         vertices[i] = Vertex(id, x, y);
     }
-
     inputFile.close();
+
     prepareDistanceMatrix();
 }
 

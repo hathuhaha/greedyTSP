@@ -13,6 +13,8 @@
 #include <queue>
 #include <stack>
 
+#define eps 1e-9
+
 #define f first
 #define s second
 
