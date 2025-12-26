@@ -1,35 +1,14 @@
 #include "parameters.h"
 
-void Graph::calculateTDistance() {
-
-    for (int i = 0; i < vSize; i++) {
-        for (int j = 0; j < vSize; j++) {
-
-            tdist[i][j] = vertices[i].getManhattanDistance(vertices[j]);
-        }
-    }
+Vertex::Vertex() {
+    id = -1;
+    x = 0.0;
+    y = 0.0;
 }
 
-void Graph::calculateDDistance() {
-
-    for (int i = 0; i < vSize; i++) {
-        for (int j = 0; j < vSize; j++) {
-
-            ddist[i][j] = vertices[i].getEuclideDistance(vertices[j]);
-        }
-    }
+Vertex::Vertex(int _id, double _x, double _y) {
+    id = _id;
+    x = _x;
+    y = _y;
 }
 
-double Graph::Vertex::getEuclideDistance(const Vertex &other) {
-
-    double dx = position.f - other.position.f;
-    double dy = position.s - other.position.s;
-    return std::sqrt(dx * dx + dy * dy);
-}
-
-double Graph::Vertex::getManhattanDistance(const Vertex &other) {
-
-    double dx = std::abs(position.f - other.position.f);
-    double dy = std::abs(position.s - other.position.s);
-    return dx + dy;
-}
