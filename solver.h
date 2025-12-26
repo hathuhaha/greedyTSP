@@ -12,8 +12,8 @@ public:
     std::vector<int> tour; 
     double totalLength;
     Solution();
-    Solution(const std::vector<int> &_tour, const double &_totalLength);
-}
+    Solution(const std::vector<int> _tour, const double _totalLength);
+};
 
 class solver {
 public: 

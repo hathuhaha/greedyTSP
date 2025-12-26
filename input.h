@@ -14,7 +14,7 @@ public:
     Instance(const int &_cntVertices, const std::vector<Vertex> &_vertices); 
     void readFromFile(const std::string &fileName);
     void prepareDistanceMatrix();
-    double getDistance(const int &from, const int &to);
+    double getDistance(const int &from, const int &to) const;
 };
 
 #endif

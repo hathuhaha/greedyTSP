@@ -1,21 +1,22 @@
 #include "input.h"
+#include "helpers.h"
 
 //Default constructor for Instance class
 Instance::Instance() {
     cntVertices = 0;
     vertices = std::vector<Vertex>();
-    distance = std::vector<double>();
+    distance = std::vector<std::vector<double>>(cntVertices, std::vector<double>(cntVertices, 0.0));
 }
 
 //Parameterized constructor for Instance class
 Instance::Instance(const int &_cntVertices, const std::vector<Vertex> &_vertices) {
     cntVertices = _cntVertices;
     vertices = _vertices;
-    distance = std::vector<double>(cntVertices * cntVertices, 0.0);
+    distance = std::vector<std::vector<double>>(cntVertices, std::vector<double>(cntVertices, 0.0));
 }
 
 //Function to get distance between two vertices
-double Instance::getDistance(const int &from, const int &to) {
+double Instance::getDistance(const int &from, const int &to) const {
     if(from == to)
         return 0.0;
     return getEuclideDistance(vertices[from], vertices[to]);
