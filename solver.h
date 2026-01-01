@@ -9,29 +9,21 @@
 
 class Solution {
 public: 
-    std::vector<int> tour; 
-    double totalLength;
-    Solution() {
-        tour = std::vector<int>();
-        totalLength = 0.0;
-    }
-    Solution(const std::vector<int> &_tour, double _totalLength) {
-        tour = _tour;
-        totalLength = _totalLength;
-    }
+    std::vector<int> tTour; 
+    std::vector<int> dTour;
+    double total_cost;
+    Solution();
+
     //define operators
     bool operator < (const Solution &other) const;
     bool operator > (const Solution &other) const;
-    bool operator == (const Solution &other) const;
     void operator=(const Solution &other);
 
     //define helper functions
-    void addVertex(int vertex, int position, const Instance &instance);
-    void reverseTour(int from, int to);
 
     //print functions
-    void printSolution();
-    void printSolutionToFile(const std::string &fileName);
+    // void printSolution();
+    // void printSolutionToFile(const std::string &fileName);
 };
 
 class Solver {
@@ -43,7 +35,7 @@ class Solver {
         Config() {
             timeLimitInSeconds = 100000;
             algorithmName = "ILS";
-            mutationRate = randomDouble(0.15, 0.3);
+            mutationRate = randomDouble(0.3, 0.6);
         }
     };
 public: 
@@ -52,39 +44,49 @@ public:
     long long runtime;
 
     //Constructors
-    Solver() {
-        instance = Instance();
-        config = Config();
-    }
-    Solver(const Instance &_instance) {
-        instance = _instance;
-        config = Config();
-    }
+    Solver();
+    Solver(const Instance &_instance);
 
     //Set configuration parameters
     void setConfig_timeLimitInSeconds(long long _timeLimitInSeconds);
-    void setConfig_algorithm(std::string _algorithmName);
-    void setConfig_muatationRate(double _mutationRate);
+    void setConfig_algorithm(std::string _algorithmName); 
+    void setConfig_muatationRate(double _mutationRate); 
+
+    //helpers
+    void addCustomertoTruck(Solution &solution, int customer, int position);
+    double delta_moveDroneToTruck(Solution &solution, int id, int position);
+    double delta_reverseTTour(Solution &solution, int from, int to);
+    double delta_moveTruckToDrone(Solution &solution, int id);
+    double delta_swapTTour(Solution &solution, int x, int y);
+    double delta_swapTruckandDrone(Solution &solution, int t, int d);
+
+    void moveDroneToTruck(Solution &solution, int id, int position); 
+    void moveTruckToDrone(Solution &solution, int id); 
+    void reverseTTour(Solution &solution, int from, int to);
+    void swapTTour(Solution &solution, int x, int y);
+    void swapTruckandDrone(Solution &solution, int t, int d);
 
     //Main solving functions
-    Solution solve();
-    Solution ILS(TimePoint &endTime);
+    Solution solve(); //
+    Solution ILS(TimePoint &endTime); //
     
     Solution generateInitialSolution();
-    void localsearch(Solution &currentSolution);
-    void perturbation(Solution &currentSolution, Solution &afterChangedSolution);
-    void acceptanceCriterion(Solution &currentSolution, Solution &newSolution);
+    void localsearch(Solution &currentSolution); //
+    void perturbation(Solution &currentSolution, Solution &afterChangedSolution); //
+    void acceptanceCriterion(Solution &currentSolution, Solution &newSolution, double &coolingRate, double &threshold);
 
     // local search methods
     void localsearch_swap(Solution &currentSolution);
     void localsearch_2opt(Solution &currentSolution);
-    void localsearch_relocate(Solution &currentSolution);
+    void localsearch_relocate(Solution &currentSolution); //
+    void localsearch_addTruck(Solution &currentSolution); //
+    void localsearch_addDrone(Solution &currentSolution); //
 
     //algorithms
-    Solution NearestInsertion();
+    Solution NearestInsertion(); //
 
 
-    //helpers
+
 };
 
 #endif

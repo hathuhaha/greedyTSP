@@ -2,72 +2,40 @@
 
 //Solution class implementations
 
+Solution::Solution() {
+    tTour = std::vector<int>();
+    dTour = std::vector<int>();
+    total_cost = 0;
+}
 
-bool Solution::operator < (const Solution &other) const {
-    return (totalLength - other.totalLength) < eps;
+bool Solution::operator<(const Solution &other) const {
+    return (total_cost - other.total_cost) < eps;
 }
 
 bool Solution::operator > (const Solution &other) const {
-    return (totalLength - other.totalLength) > eps;
-}
-
-bool Solution::operator == (const Solution &other) const {
-    return abs(totalLength - other.totalLength) < eps && tour == other.tour;
+    return (total_cost - other.total_cost) > eps;
 }
 
 void Solution::operator=(const Solution &other) {
-    tour = other.tour;
-    totalLength = other.totalLength;
-}
-
-void Solution::addVertex(int vertex, int position, const Instance &instance) {
-    if(tour.size()) {
-        int prevVertex = (position == 0) ? tour.back() : tour[position - 1];
-        int nextVertex = (position == tour.size()) ? tour[0] : tour[position];
-
-        totalLength -= instance.getDistance(prevVertex, nextVertex);
-        totalLength += instance.getDistance(prevVertex, vertex);
-        totalLength += instance.getDistance(vertex, nextVertex);
-    }
-    tour.insert(tour.begin() + position, vertex);
-}
-
-void Solution::reverseTour(int from, int to) {
-    if(to < from || to >= tour.size()) {
-        std::cout << "Cannot reverse due to index error!";
-        return;
-    }
-    while(from < to) {
-        std::swap(tour[from], tour[to]);
-        from += 1; 
-        to -= 1;
-    }
+    tTour = other.tTour;
+    dTour = other.dTour;
+    total_cost = other.total_cost;
 }
 
 
-void Solution::printSolution() {
-    std::cout << "Tour: ";
-    for(int v : tour) {
-        std::cout << v << " ";
-    }
-    std::cout << "\nTotal Length: " << totalLength << "\n";
+Solver::Solver() {
+    config = Config();
+    instance = Instance();
+    runtime = 0;
 }
 
-void Solution::printSolutionToFile(const std::string &fileName) {
-    std::ofstream outFile(fileName);
-    if(!outFile.is_open()) {
-        std::cerr << "Error opening file: " << fileName << "\n";
-        return;
-    }
-    outFile << "Tour: ";
-    for(int v : tour) {
-        outFile << v << " ";
-    }
-    outFile << "\nTotal Length: " << totalLength << "\n";
-    outFile.close();
+Solver::Solver(const Instance &_instance) {
+    config = Config();
+    instance = _instance;
+    runtime = 0;
 }
 
-//Set configuration parameters
+// Set configuration parameters
 void Solver::setConfig_timeLimitInSeconds(long long _timeLimitInSeconds) {
     config.timeLimitInSeconds = _timeLimitInSeconds;
 }
@@ -78,6 +46,122 @@ void Solver::setConfig_algorithm(std::string _algorithmName) {
 
 void Solver::setConfig_muatationRate(double _mutationRate) {
     config.mutationRate = _mutationRate;
+}
+
+
+void Solver::addCustomertoTruck(Solution &solution, int customer, int position)
+{
+    solution.tTour.insert(solution.tTour.begin() + position, customer);
+    if(solution.tTour.size() > 1) {
+        int next_cus = (position == solution.tTour.size() - 1) ? 0 : solution.tTour[position + 1];
+        int prev_cus = (position == 0) ? 0 : solution.tTour[position - 1];
+        solution.total_cost -= instance.getTDistance(next_cus, prev_cus);
+        solution.total_cost += instance.getTDistance(prev_cus, customer) + instance.getTDistance(next_cus, customer);
+    }
+}
+double Solver::delta_moveDroneToTruck(Solution &solution, int id, int position) {
+    double delta = 0.0;
+    delta -= instance.getDDistance(0, solution.dTour[id]) * 2;
+
+    if(solution.tTour.size() == 0) {
+        return delta;
+    }
+
+    int next_id = (position == solution.tTour.size()) ? 0 : solution.tTour[position];
+    int prev_id = (position == 0) ? 0 : solution.tTour[position - 1];
+
+    delta -= instance.getTDistance(next_id, prev_id);
+    delta += instance.getTDistance(solution.dTour[id], next_id);
+    delta += instance.getTDistance(solution.dTour[id], prev_id);
+
+    return delta;
+}
+
+double Solver::delta_reverseTTour(Solution &solution, int from, int to) {
+    double delta = 0.0;
+    if(from > to)
+        std::swap(from, to);
+
+    int prev_from = (from == 0) ? 0 : solution.tTour[from - 1];
+    int next_to = (to == solution.tTour.size() - 1) ? 0 : solution.tTour[to + 1];
+    delta -= instance.getTDistance(prev_from, solution.tTour[from]);
+    delta -= instance.getTDistance(next_to, solution.tTour[to]);
+    delta += instance.getTDistance(prev_from, solution.tTour[to]);
+    delta += instance.getTDistance(next_to, solution.tTour[from]);
+
+    return delta;
+}
+
+double Solver::delta_moveTruckToDrone(Solution &solution, int id) {
+    double delta = 0.0;
+    if(solution.tTour.size() > 1) {
+        int next_id = (id == solution.tTour.size() - 1) ? 0 : solution.tTour[id + 1];
+        int prev_id = (id == 0) ? 0 : solution.tTour[id - 1];
+
+        delta -= (instance.getTDistance(next_id, solution.tTour[id]) + instance.getTDistance(prev_id, solution.tTour[id]));
+        delta += instance.getTDistance(next_id, prev_id);
+    }
+    delta += instance.getDDistance(0, solution.tTour[id]) * 2;
+    return delta;
+}
+double Solver::delta_swapTTour(Solution &solution, int x, int y) {
+    int prev_x = (x == 0) ? 0 : solution.tTour[x - 1];
+    int next_x = (x == solution.tTour.size() - 1) ? 0 : solution.tTour[x + 1];
+    int prev_y = (y == 0) ? 0 : solution.tTour[y - 1];
+    int next_y = (y == solution.tTour.size() - 1) ? 0 : solution.tTour[y + 1];
+
+    double delta = 0.0;
+    delta += (prev_x == solution.tTour[y]) ? 0.0 : (instance.getTDistance(prev_x, solution.tTour[y]) - instance.getTDistance(prev_x, solution.tTour[x]));
+    delta += (next_x == solution.tTour[y]) ? 0.0 : (instance.getTDistance(next_x, solution.tTour[y]) - instance.getTDistance(next_x, solution.tTour[x]));
+    delta += (prev_y == solution.tTour[x]) ? 0.0 : (instance.getTDistance(prev_y, solution.tTour[x]) - instance.getTDistance(prev_y, solution.tTour[y]));
+    delta += (next_y == solution.tTour[x]) ? 0.0 : (instance.getTDistance(next_y, solution.tTour[x]) - instance.getTDistance(next_y, solution.tTour[y]));
+    return delta;
+}
+double Solver::delta_swapTruckandDrone(Solution &solution, int t, int d) {
+    double delta = 0.0;
+    delta += (instance.getDDistance(0, solution.tTour[t]) * 2 - instance.getDDistance(0, solution.dTour[d]) * 2);
+    int prev_t = (t == 0) ? 0 : solution.tTour[t - 1];
+    int next_t = (t == solution.tTour.size() - 1) ? 0 : solution.tTour[t + 1];
+
+    delta -= (instance.getTDistance(solution.tTour[t], prev_t) + instance.getTDistance(solution.tTour[t], next_t));
+    delta += (instance.getTDistance(solution.dTour[d], prev_t) + instance.getTDistance(solution.dTour[d], next_t));
+    return delta;
+
+}
+void Solver::moveDroneToTruck(Solution &solution, int id, int position)
+{
+    double delta = delta_moveDroneToTruck(solution, id, position);
+    solution.total_cost += delta;
+    solution.tTour.insert(solution.tTour.begin() + position, solution.dTour[id]);
+    solution.dTour.erase(solution.dTour.begin() + id);
+}
+void Solver::moveTruckToDrone(Solution &solution, int id) {
+    double delta = delta_moveTruckToDrone(solution, id);
+    solution.total_cost += delta;
+    solution.dTour.push_back(solution.tTour[id]);
+    solution.tTour.erase(solution.tTour.begin() + id);
+}
+void Solver::reverseTTour(Solution &solution, int from, int to) {
+    if(from > to)
+        std::swap(from, to);
+    double delta = delta_reverseTTour(solution, from, to);
+    solution.total_cost += delta;
+    while(from < to) {
+        std::swap(solution.tTour[from], solution.tTour[to]);
+        from ++;
+        to --;
+    }
+
+}
+
+void Solver::swapTTour(Solution &solution, int x, int y) {
+    solution.total_cost += delta_swapTTour(solution, x, y);
+    std::swap(solution.tTour[x], solution.tTour[y]);
+}
+
+void Solver::swapTruckandDrone(Solution &solution, int t, int d) {
+    solution.total_cost += delta_swapTruckandDrone(solution, t, d);
+    std::swap(solution.tTour[t], solution.dTour[d]);
 }
 
 //Main solving function
@@ -96,238 +180,166 @@ Solution Solver::ILS(TimePoint &endTime) {
     double threshold = 0.2; 
     double cooling_rate = 0.996;
     int cnt = 0;
-    int maxIterations = 100;
-    for(int i = 0; i < maxIterations; i++) {
+    int maxIterations = 10;
+    for(int i = 1; i <= maxIterations; i++) {
         Solution newSolution = currentSolution;
         perturbation(currentSolution, newSolution);
         localsearch(newSolution);
-        if((newSolution.totalLength - currentSolution.totalLength) / currentSolution.totalLength - threshold < -eps) {
-            currentSolution = newSolution;
-            threshold *= cooling_rate;
-
-        }
-        if(currentSolution.totalLength < bestSolution.totalLength) {
+        acceptanceCriterion(currentSolution, newSolution, cooling_rate, threshold);
+        if(currentSolution.total_cost < bestSolution.total_cost) {
             bestSolution = currentSolution;
             cnt += 1;
         }
     }
     std::cerr << cnt << '\n';
-    return bestSolution;
+    return initialSolution;
 }
 Solution Solver::generateInitialSolution() {
 
-    Solution initialSolution = NearestInsertion();
-    Solution &currentSolution = initialSolution;
+    Solution currentSolution = Solution();
+    for(int i = 1; i <= instance.cntCustomers; i++) {
+        currentSolution.tTour.push_back(i);
+        currentSolution.total_cost += instance.getTDistance(i - 1, i);
+    }
+    currentSolution.total_cost += instance.getTDistance(instance.cntCustomers, 0);
     localsearch(currentSolution);
     return currentSolution;
 }
 
 void Solver::localsearch(Solution &currentSolution) {
+    
+    localsearch_addDrone(currentSolution);
     localsearch_swap(currentSolution);
-    localsearch_2opt(currentSolution);
+    localsearch_addTruck(currentSolution);
     localsearch_relocate(currentSolution);
+    localsearch_2opt(currentSolution);
 }
 
 void Solver::perturbation(Solution &currentSolution, Solution &afterChangedSolution) {
-    int changedPairs = config.mutationRate * int(currentSolution.tour.size() / 2);
+    int changedPairs = config.mutationRate * (int(currentSolution.tTour.size() + currentSolution.dTour.size()) / 2);
     afterChangedSolution = currentSolution;
 
+    int changedTDPairs = randomDouble(0.1, 0.3) * std::min((double)changedPairs, std::min((double)currentSolution.dTour.size(), (double)currentSolution.tTour.size()));
+    changedPairs -= changedTDPairs;
+    int moveTrucktoDrone = randomDouble(0.05, 0.3) * (double)std::min(changedPairs, (int)currentSolution.tTour.size());
+    changedPairs -= moveTrucktoDrone;
+    int moveDronetoTruck = randomDouble(0.05, 0.3) * (double)std::min(changedPairs, (int)currentSolution.dTour.size());
+    changedPairs -= moveDronetoTruck;
     for(int i = 0; i < changedPairs; i++) {
-        std::pair<int, int> randPair = randomDistinctPair(0, currentSolution.tour.size() - 1);
+        std::pair<int, int> randPair = randomDistinctPair(0, currentSolution.tTour.size() - 1);
         int x = randPair.first;
         int y = randPair.second;
-
-        //swap two vertices
-        int prev_x = (x == 0) ? afterChangedSolution.tour.back() : afterChangedSolution.tour[x - 1];
-        int next_x = (x == afterChangedSolution.tour.size() - 1) ? afterChangedSolution.tour[0] : afterChangedSolution.tour[x + 1];
-        int prev_y = (y == 0) ? afterChangedSolution.tour.back() : afterChangedSolution.tour[y - 1];
-        int next_y = (y == afterChangedSolution.tour.size() - 1) ? afterChangedSolution.tour[0] : afterChangedSolution.tour[y + 1];
-
-        double delta = -((prev_x == afterChangedSolution.tour[y]) ? 0.0 : instance.getDistance(prev_x, afterChangedSolution.tour[x]))
-                       -((next_x == afterChangedSolution.tour[y]) ? 0.0 : instance.getDistance(next_x, afterChangedSolution.tour[x]))
-                       -((prev_y == afterChangedSolution.tour[x]) ? 0.0 : instance.getDistance(prev_y, afterChangedSolution.tour[y]))
-                       -((next_y == afterChangedSolution.tour[x]) ? 0.0 : instance.getDistance(next_y, afterChangedSolution.tour[y]))
-                       +((prev_x == afterChangedSolution.tour[y]) ? 0.0 : instance.getDistance(prev_x, afterChangedSolution.tour[y]))
-                       +((next_x == afterChangedSolution.tour[y]) ? 0.0 : instance.getDistance(next_x, afterChangedSolution.tour[y]))
-                       +((prev_y == afterChangedSolution.tour[x]) ? 0.0 : instance.getDistance(prev_y, afterChangedSolution.tour[x]))
-                       +((next_y == afterChangedSolution.tour[x]) ? 0.0 : instance.getDistance(next_y, afterChangedSolution.tour[x]));
-
-        //change solution
-        std::swap(afterChangedSolution.tour[x], afterChangedSolution.tour[y]);
-        afterChangedSolution.totalLength += delta;
+        swapTTour(afterChangedSolution, x, y);
+    }
+    for(int i = 0; i < changedTDPairs; i++) {
+        int x = randomInt(0, afterChangedSolution.dTour.size() - 1);
+        int y = randomInt(0, afterChangedSolution.tTour.size() - 1);
+        swapTruckandDrone(afterChangedSolution, y, x);
+    }
+    for(int i = 0; i < moveDronetoTruck; i++) {
+        int d = randomInt(0, afterChangedSolution.dTour.size() - 1);
+        int p = randomInt(0, afterChangedSolution.tTour.size());
+        moveDroneToTruck(afterChangedSolution, d, p);
+    }
+    for(int i = 0; i < moveTrucktoDrone; i++) {
+        int t = randomInt(0, afterChangedSolution.tTour.size() - 1);
+        moveTruckToDrone(afterChangedSolution, t);
     }
 }
 
-void Solver::acceptanceCriterion(Solution &currentSolution, Solution &newSolution) {
-    
+void Solver::acceptanceCriterion(Solution &currentSolution, Solution &newSolution, double &coolingRate, double &threshold) {
+    if((newSolution.total_cost - currentSolution.total_cost) / currentSolution.total_cost - threshold < -eps)
+        currentSolution = newSolution;
+    threshold *= coolingRate;
 }
 
 //local search methods
 void Solver::localsearch_swap(Solution &currentSolution) {
-
     bool stop = false;
     while(!stop) {
-        stop = true;
-        for(int i = 0; i < currentSolution.tour.size() - 1 && stop; i++) {
-
-            int prev_i = (i == 0) ? currentSolution.tour.back() : currentSolution.tour[i - 1];
-            int next_i = (i == currentSolution.tour.size() - 1) ? currentSolution.tour[0] : currentSolution.tour[i + 1];
-
-            for(int j = i + 1; j < currentSolution.tour.size() && stop; j++) {
-                
-                int prev_j = (j == 0) ? currentSolution.tour.back() : currentSolution.tour[j - 1];
-                int next_j = (j == currentSolution.tour.size() - 1) ? currentSolution.tour[0] : currentSolution.tour[j + 1];
-                
-                double delta = - ((prev_i != currentSolution.tour[j]) ? instance.getDistance(prev_i, currentSolution.tour[i]) : 0.0)
-                               - ((next_i != currentSolution.tour[j]) ? instance.getDistance(currentSolution.tour[i], next_i) : 0.0)
-                               - ((prev_j != currentSolution.tour[i]) ? instance.getDistance(prev_j, currentSolution.tour[j]) : 0.0)
-                               - ((next_j != currentSolution.tour[i]) ? instance.getDistance(currentSolution.tour[j], next_j) : 0.0)
-                               + instance.getDistance(prev_i, currentSolution.tour[j])
-                               + instance.getDistance(currentSolution.tour[j], next_i)
-                               + instance.getDistance(prev_j, currentSolution.tour[i])
-                               + instance.getDistance(currentSolution.tour[i], next_j);
-
-                if(delta < -eps) {
-                    std::swap(currentSolution.tour[i], currentSolution.tour[j]);
-                    currentSolution.totalLength += delta;
+        stop = true;  
+        for(int i = 0; i < currentSolution.tTour.size() && stop; i++) {
+            for(int j = i + 1; j < currentSolution.tTour.size() && stop; j++) {
+                double delta = delta_swapTTour(currentSolution, i, j);
+                if(delta < -eps) { 
+                    swapTTour(currentSolution, i, j);
                     stop = false;
                 }
-
             }
         }
-
     }
 }
 
 void Solver::localsearch_2opt(Solution &currentSolution) {
-    std::ofstream printlog("debug.log");
-
     bool stop = false;
     while(!stop) {
         stop = true;
-        for(int i = 0; i < currentSolution.tour.size() - 1 && stop; i++) {
-            for(int j = i + 1; j < currentSolution.tour.size() && stop; j++) {
-                double delta = 0.0;
-                if(i == 0 && j == currentSolution.tour.size() - 1) {
-                    continue;
-                }
-
-                int prev_i = (i == 0) ? currentSolution.tour.back() : currentSolution.tour[i - 1];
-                int next_j = (j == currentSolution.tour.size() - 1) ? currentSolution.tour[0] : currentSolution.tour[j + 1];
-
-                delta -= instance.getDistance(prev_i, currentSolution.tour[i]);
-                delta -= instance.getDistance(next_j, currentSolution.tour[j]);
-                delta += instance.getDistance(prev_i, currentSolution.tour[j]);
-                delta += instance.getDistance(next_j, currentSolution.tour[i]);
-
-
+        for(int i = 0; i < currentSolution.tTour.size() && stop; i++) {
+            for(int j = i + 1; j < currentSolution.tTour.size() && stop; j++) {
+                double delta = delta_reverseTTour(currentSolution, i, j);
                 if(delta < -eps) {
+                    reverseTTour(currentSolution, i, j);
                     stop = false;
-                    currentSolution.totalLength += delta;
-                    currentSolution.reverseTour(i, j);
                 }
-                printlog << delta << '\n';
             }
         }
     }
-    printlog.close();
-
 }
+
 void Solver::localsearch_relocate(Solution &currentSolution) {
     bool stop = false;
     while(!stop) {
         stop = true;
-        for(int i = 0; i < currentSolution.tour.size(); i++) {
-            for(int j = 0; j < currentSolution.tour.size(); j++) {
-                if(i == j) {
-                    continue;
-                }
-
-                double delta = 0.0;
-                int tour_i = currentSolution.tour[i];
-
-                int prev_i = (i == 0) ? currentSolution.tour.back() : currentSolution.tour[i - 1];
-                int next_i = (i == currentSolution.tour.size() - 1) ? currentSolution.tour[0] : currentSolution.tour[i + 1];
-
-                delta -= instance.getDistance(prev_i, tour_i);
-                delta -= instance.getDistance(next_i, tour_i);
-                delta += instance.getDistance(prev_i, next_i);
-
-                int id_prev_j = (j == 0) ? currentSolution.tour.size() - 1 : (j - 1);
-                if(id_prev_j == i) {
-                    id_prev_j = (id_prev_j == 0) ? currentSolution.tour.size() - 1 : (id_prev_j - 1);
-                }
-                int prev_j = currentSolution.tour[id_prev_j];
-                delta += instance.getDistance(prev_j, currentSolution.tour[i]);
-                delta += instance.getDistance(currentSolution.tour[i], currentSolution.tour[j]);
-                delta -= instance.getDistance(prev_j, currentSolution.tour[j]);
-
+        for(int i = 0; i < currentSolution.tTour.size() && stop; i++) {
+            int id_cus = currentSolution.tTour[i];
+            if(instance.demand[id_cus] > 2.5)
+                continue;
+            for(int j = 0; j < currentSolution.dTour.size() && stop; j++) {
+                double delta = delta_swapTruckandDrone(currentSolution, i, j);
                 if(delta < -eps) {
-                    currentSolution.tour.erase(currentSolution.tour.begin() + i);
-                    int er = 0;
-                    if(j > i)
-                        er += 1;
-                    currentSolution.tour.insert(currentSolution.tour.begin() + j - er, tour_i);
-                    currentSolution.totalLength += delta;
+                    swapTruckandDrone(currentSolution, i, j);
                     stop = false;
                 }
-                
             }
         }
     }
 }
-//construct new solution
+
+void Solver::localsearch_addTruck(Solution &currentSolution) {
+    bool stop = false;
+    while(!stop) {
+        stop = true;
+        for(int i = 0; i < currentSolution.dTour.size() && stop; i++) {
+            int dTour_i = currentSolution.dTour[i];
+            for(int position = 0; position <= currentSolution.tTour.size() && stop; position++) {
+                double delta = delta_moveDroneToTruck(currentSolution, i, position);
+                if(delta < -eps) {
+                    moveDroneToTruck(currentSolution, i, position);
+                    stop = false;
+                }
+            }
+        }
+    }
+}
+
+void Solver::localsearch_addDrone(Solution &currentSolution) {
+    bool stop = false;
+    while(!stop) {
+        stop = true;
+        for(int i = 0; i < currentSolution.tTour.size() && stop; i++) {
+            int tTour_i = currentSolution.tTour[i];
+            if(instance.demand[tTour_i] > 2.5)
+                continue;
+            double delta = delta_moveTruckToDrone(currentSolution, i);
+            if(delta < -eps) {
+                moveTruckToDrone(currentSolution, i);
+                stop = false;
+            }
+        }
+    }
+}
+
+//construct new tour for truck
 Solution Solver::NearestInsertion() {
-    Solution solution;
-    std::vector<bool> inTour(instance.cntVertices, false);
-    std::vector<double> minDistToTour(instance.cntVertices, std::numeric_limits<double>::max());
-
-    inTour[0] = true;
-    solution.addVertex(0, 0, instance);
-    for(int v = 0; v < instance.cntVertices; v++) {
-        if(v != 0) {
-            double dist = instance.getDistance(0, v);
-            minDistToTour[v] = dist;
-        }
-    }
-    while(solution.tour.size() < instance.cntVertices) {
-        int bestVertex = -1;
-        double bestDist = std::numeric_limits<double>::max();
-        for(int v = 0; v < instance.cntVertices; v++) {
-            if(!inTour[v]) {
-                if(bestDist > minDistToTour[v]) {
-                    bestDist = minDistToTour[v];
-                    bestVertex = v;
-                }
-            }
-        }
-
-        int bestPosition = -1;
-        if(solution.tour.size() == 1) {
-            bestPosition = 1;
-        }
-        double bestIncrease = std::numeric_limits<double>::max();
-
-        for(int pos = 0; pos < solution.tour.size(); pos++) { 
-            int prevVertex = (pos == 0) ? solution.tour.back() : solution.tour[pos - 1];
-            int nextVertex = (pos == solution.tour.size()) ? solution.tour[0] : solution.tour[pos];
-            double increase = instance.getDistance(prevVertex, bestVertex) + instance.getDistance(bestVertex, nextVertex) - instance.getDistance(prevVertex, nextVertex);
-            if(increase < bestIncrease) {
-                bestIncrease = increase;
-                bestPosition = pos;
-            }
-        }
-        for(int v = 0; v < instance.cntVertices; v++) {
-            if(!inTour[v]) {
-                double dist = instance.getDistance(v, bestVertex);
-                if(minDistToTour[v] > dist) {
-                    minDistToTour[v] = dist;
-                }
-            }
-        }
-        inTour[bestVertex] = true;
-        solution.addVertex(bestVertex, bestPosition, instance);
-    }
-    return solution;
+    return Solution();
 }
-

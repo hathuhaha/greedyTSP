@@ -1,2 +1,4 @@
-att48.tsp
-berlin52.tsp
+input10.txt
+input7.txt
+input8.txt
+input4.txt
